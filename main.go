@@ -76,14 +76,38 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Tarea no encontrada", http.StatusNotFound)
 }
 
+func getTaskHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		http.Error(w, "ID invalido", http.StatusNotFound)
+		return
+	}
+
+	for _, task := range tasks {
+		if task.ID == id {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(task)
+			return
+		}
+	}
+	http.Error(w, "Tarea no encontrada", http.StatusBadRequest)
+
+}
+
 func main() {
 	tasks = append(tasks, Task{ID: 1, Name: "estudiar go"})
 	tasks = append(tasks, Task{ID: 2, Name: "Estudiar documentacion"})
 	tasks = append(tasks, Task{ID: 3, Name: "Hacer un proyecto"})
 	nextID = 4
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", helloHandler)
 	r.HandleFunc("/tasks", taskHandler).Methods("GET", "POST")
 	r.HandleFunc("/tasks/{id}", deleteTaskHandler).Methods("DELETE")
+	r.HandleFunc("/tasks/{id}", getTaskHandler).Methods("GET")
 	http.ListenAndServe(":8080", r)
 }
